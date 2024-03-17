@@ -137,7 +137,7 @@ p {
     <header>
         <h1>Wheelchair Control</h1>
     </header>
-    <p><a href="wheelchairweb.html">Go back to Home</a></p>
+    <p><a href="homepage3.html">Go back</a></p>
     <!-- Your content for the controls page goes here -->
     <section class="control-section">
         <div class = "flex-keypad">

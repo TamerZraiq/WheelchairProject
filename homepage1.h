@@ -1,4 +1,4 @@
-String homePagePart1 = F(R"=====(
+String homePagePart0 = F(R"=====(
 <!DOCTYPE html>
 <html lang="en">
 <head>    
@@ -19,14 +19,10 @@ a {
     color: #0b214b; /* Default color */
     text-decoration: none; 
 }
-
-/* Hover state */
 a:hover {
     color: #2ecc71; 
 
 }
-
-/* Active (clicked) state */
 a:active {
     color: #e74c3c; 
 
@@ -145,15 +141,17 @@ p {
     </header>
     <br>
     <header>
-    <h2>Please choose one of the following</h2>
+    <h2>Welcome to my Website!</h2>
+    <h2>Please Scan Your Card </h2>
     </header>        
+    <section class="options-section">
+        <h2>Status: </h2>
+        )=====");
+        String AccessStatus = F(R"=====(
+        <h2><a href="homepage3.html">Proceed</a></h2>
+        <h2> </h2>
+    </section>
     
-    <section class="options-section">
-        <h2><a href="data.html">Data and Details</a></h2>
-    </section>
-    <section class="options-section">
-        <h2><a href="controls.html">Wheelchair Control</a></h2>
-    </section>
 </div>
 </body>
 </html>

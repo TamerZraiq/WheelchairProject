@@ -138,7 +138,7 @@ String datapage = F(R"=====(
     <header>
         <h1>Sensor Data</h1>
     </header>
-    <p><a href="wheelchairweb.html">Go back to Home</a></p>
+    <p><a href="homepage3.html">Go back</a></p>
     <section class="options-section">
         <div class="sensor-container">
             <div class="sensor">

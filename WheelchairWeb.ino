@@ -6,10 +6,12 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_PN532.h>
-#include "homepage3.h"
-#include "homepage1.h"
+#include "homepage2.h"
+#include "AccessGranted.h"
+#include "AccessDenied.h"
 #include "dataPage.h"
 #include "controlsPage.h"
+#include "Info.h"
 
 #define DHT11_PIN 14
 #define PN532_IRQ (18)
@@ -17,20 +19,26 @@
 const char* ssid = "Tamer";
 const char* password = "tzraiq2005";
 
+const int TRIG_PIN = 5;
+const int ECHO_PIN = 17;
+const int LED = 16;
 const int MOTOR_PIN = 27;
 const int ENABLE_PIN = 12;
 const int ENABLE_PIN2 = 32;
 const int MOTOR_PIN2 = 33;
-int dutyCycle = 0;
+
 const int FREQ = 30000;
 const int PWM_CHANNEL = 0;
 const int RESOLUTION = 8;
+int dutyCycle = 0;
 uint8_t success;
+long duration;
+float cms;
+
 DFRobot_DHT11 DHT;
 Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
 
 WebServer server(80);
-
 
 bool checkAllowedUID(uint8_t uid[], uint8_t uidLength) {
   // Define the allowed UID
@@ -52,19 +60,20 @@ String handleRFID() {
   denied = "Access Denied";
   undetected = "Card Undetected";
   success = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
-  return denied;
+ 
   if (success) {
     Serial.println("Card Detected");
-    // Example: Check if the UID matches an allowed UID
-    if (checkAllowedUID(uid, uidLength) == true) {
+    
+    if (checkAllowedUID(uid, uidLength) == true) {//Check if the UID matches an allowed UID
       Serial.println(granted);
       return granted;
-      // Perform actions for granted access
     } else{
       Serial.println(denied);
       return denied;
-      // Perform actions for denied access
     }
+  }else{
+    return undetected;
+    Serial.println(undetected);
   }
 }
 
@@ -88,9 +97,35 @@ String getFSR() {
     return unoccupied;
   }
 }
+float reverseSensor(){
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(5);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+
+  duration = pulseIn(ECHO_PIN, HIGH);
+  cms = (duration / 2) / 29.1;
+
+  Serial.print(cms);
+  Serial.println(" cm");
+  
+  if (cms < 5) {
+    digitalWrite(LED, HIGH);
+    delay(500);
+    digitalWrite(LED, LOW);
+    delay(500);
+  }
+}
 void handleRoot() {
-  String message = homePagePart0 + handleRFID() + AccessStatus;
-  server.send(200, "text/html", message);
+  String message;
+  if(handleRFID() == "Access Granted"){
+    message = homePagePart1; 
+    server.send(200, "text/html", message);    
+  }else{
+    message = homePagePart0;
+    server.send(200, "text/html", message);    
+  }
 }
 void handleNotFound() {
   String message = "File Not Found\n\n";
@@ -129,6 +164,7 @@ void handleKeyPress() {
     digitalWrite(MOTOR_PIN, HIGH);
     digitalWrite(MOTOR_PIN2, LOW);
     ledcWrite(PWM_CHANNEL, dutyCycle);
+    reverseSensor();
   } else if (receivedData == "S") {
     ledcWrite(PWM_CHANNEL, 0);
   }
@@ -139,11 +175,11 @@ void handleKeyPress() {
 
 void setup(void) {
   Serial.begin(115200);
-  nfc.begin();
+  
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   Serial.println("");
-
+  nfc.begin();
   // Wait for connection
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -162,8 +198,13 @@ void setup(void) {
   server.on("/", handleRoot);
   server.on("/sentKeyPressToWebServer", handleKeyPress);
 
-  server.on("/homepage3.html", []() {
-    String message = homePagePart1;
+  server.on("/homepage2.html", []() {
+    String message = homePagePart2;
+    server.send(200, "text/html", message);
+  });
+
+  server.on("/info.html", []() {
+    String message = information;
     server.send(200, "text/html", message);
   });
 
@@ -176,7 +217,6 @@ void setup(void) {
     String message = controlspage;
     server.send(200, "text/html", message);
   });
-
 
   server.onNotFound(handleNotFound);
 

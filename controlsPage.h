@@ -5,151 +5,134 @@ String controlspage = F(R"=====(
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wheelchair Navigation</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="background.css">
+    
 <style>
     body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-}
-a {
-  color: #0b214b; /* Default color */
-  text-decoration: none; 
-}
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column; /* Change to column for navbar */
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #3498db, #2ecc71); /* Gradient from light blue to green */
+        color: white;
+    }
+ 
+    .navbar {
+      width: 100%;
+      background-color: rgba(255, 255, 255, 0.1); 
+      overflow: auto;
+    }
+    .navbar a {
+      float: left;
+      padding: 12px;
+      color: white;
+      text-decoration: none;
+      font-size: 17px;
+      width: 25%; 
+      text-align: center;
+    }
+    .navbar a:hover {
+      background-color: #34495e;
+    }
+    .content {
+        text-align: center;
+        max-width: 800px;
+        padding: 20px;
+    }
 
-a:hover {
-  color: #2ecc71; 
-}
+    header {
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    h3 {
+      margin-bottom: 10px;
+    }
+    p {
+      margin-bottom: 20px;
+    }
 
-a:active {
-  color: #e74c3c; 
-}
+    a {
+      color: #fff; 
+      text-decoration: none;
+      font-weight: bold;
+    }
+    a:hover {
+      color: #2ecc71; /* Lighter green */
+    }
+    a:active {
+       color: #e74c3c; /* Darker red */
+    }
+    .control-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
-.sensor-section,
-.control-section {
-  max-width: 800px;
-  margin: 20px auto;
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-}
+    .flex-keypad {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+    }
 
-.options-section {
-  max-width: 800px;
-  margin: 20px auto;
-  padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  text-align: center;
-}
+    .myButton {
+      display: block;
+      width: 20%;
+      padding: 10px;
+      margin: 10px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .emergencyButton {
+      display: block;
+      background-color: #4CAF50;
+      color: white;
+      font-size: 20px;
+      padding: 15px 25px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 8px;
+    }
+    @media (max-width: 576px) {
 
-.sensor-container {
-  display: flex;
-  justify-content: space-between;
-}
-
-.sensor,
-.controls {
-  flex: 1;
-  text-align: center;
-  padding: 20px;
-}
-button:hover {
-  background-color: #45a049;
-}
-.flex-Container{
-  display: flex;
-  flex-direction: column;
-  background-color: DodgerBlue;
-  }
-.flex-row {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.flex-keypad{
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-}
-.myButton {
-  display: block;
-  width: 20%;
-  padding: 10px;
-  margin: 10px;
-  font-size: 16px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-footer {
-  background-color: #333;
-  color: #fff;
-  text-align: center;
-  padding: 1em 0;
-  position: fixed;
-  width: 100%;
-  bottom: 0;
-}
-body {
-  margin: 0;
-  padding: 0;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #3498db, #2ecc71); /* Gradient from light blue to green */
-  overflow: hidden; /* Prevent scrolling beyond the viewport */
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: white;
-}
-
-.overlay {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.3); /* Semi-transparent overlay */
-}
-
-.content {
-  z-index: 1; /* Place content above the overlay */
-  text-align: center;
-}
-
-h1 {
-  font-size: 3em;
-  margin-bottom: 20px;
-}
-
-p {
-  font-size: 1.5em;
-}
+    }
 </style>
 </head>
 
 <body>
     <div class="overlay"></div>
+    <div class="navbar">
+        <a href="homepage2.html">Home</a>
+        <a href="info.html">Project Information</a>
+        <a href="data.html">Data</a>
+  </div>
     <div class="content">
     <header>
         <h1>Wheelchair Control</h1>
     </header>
-    <p><a href="homepage3.html">Go back</a></p>
+    <p><a href="homepage2.html">Go back</a></p>
     <!-- Your content for the controls page goes here -->
     <section class="control-section">
         <div class = "flex-keypad">
-          <button class="myButton" onclick="fetch('/sentKeyPressToWebServer?button=F')"> Fwd</button> 
+          <button class="emergencyButton" onclick="fetch('/sentKeyPressToWebServer?button=F')"> Fwd</button> 
         </div>
           <div class = "flex-keypad">
-            <button class="myButton" onclick="fetch('/sentKeyPressToWebServer?button=L')"> Left</button> 
-            <button class="myButton" onclick="fetch('/sentKeyPressToWebServer?button=S')"> Stop</button> 
-            <button class="myButton" onclick="fetch('/sentKeyPressToWebServer?button=R')"> Right</button> 
+            <button class="emergencyButton" onclick="fetch('/sentKeyPressToWebServer?button=L')"> Left</button> 
+            <button class="emergencyButton" onclick="fetch('/sentKeyPressToWebServer?button=S')"> Stop</button> 
+            <button class="emergencyButton" onclick="fetch('/sentKeyPressToWebServer?button=R')"> Right</button> 
           </div>
           <div class = "flex-keypad">
-            <button class="myButton" onclick="fetch('/sentKeyPressToWebServer?button=B')"> Back</button> 
+            <button class="emergencyButton" onclick="fetch('/sentKeyPressToWebServer?button=B')"> Back</button> 
           </div>
         </div>
     </section>

@@ -114,22 +114,28 @@ String datapage = F(R"=====(
           String datapage1 = F(R"=====(
           <p>°C</p>
           <h3>Heart Rate</h3>
-          <p>-- BPM</p>
+          )=====");
+          String datapage2 = F(R"=====(
+          <p>BPM</p>
+          <h3>Humidity</h3>
+          )=====");
+          String datapage3 = F(R"=====(
+          <p> %</p>
         </div>
       </div>
     </section>
-    
+  
     <section class="options-section">
       <div class="sensor-container">
         <div class="sensor">
           <h3>Wheelchair Status</h3>
           )=====");
-          String datapage3 = F(R"=====(        
-          <h3>Wheelchair Condition</h3>
-          <p>Stable</p>
+          String datapage4 = F(R"=====(        
         </div>
       </div>
     </section>
+    <iframe width="450" height="260" style="border: 1px solid #cccccc;" src="https://thingspeak.com/channels/2507348/charts/1?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&type=line&update=15"></iframe>
+    <iframe width="450" height="260" style="border: 1px solid #cccccc;" src="https://thingspeak.com/channels/2507348/charts/2?bgcolor=%23ffffff&color=%23d62020&dynamic=true&results=60&title=Heart+Rate&type=line"></iframe>
   </div>
 </body>
 </html>

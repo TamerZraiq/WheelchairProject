@@ -6,40 +6,88 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_PN532.h>
+#include "MAX30100_PulseOximeter.h"
+#include "DHT_Async.h"
+
 #include "homepage2.h"
 #include "AccessGranted.h"
 #include "AccessDenied.h"
 #include "dataPage.h"
 #include "controlsPage.h"
 #include "Info.h"
+#include "secrets.h"
+#include "ThingSpeak.h" 
 
-#define DHT11_PIN 14
 #define PN532_IRQ (18)
-#define PN532_RESET (19)
-const char* ssid = "Tamer";
-const char* password = "tzraiq2005";
+#define PN532_RESET (19) 
+#define REPORTING_PERIOD_MS_THINGSPEAK 1000  // report to ThingSpeak every 1s
+#define REPORTING_PERIOD_MS 1000
+#define DHT_SENSOR_TYPE DHT_TYPE_11
 
+char ssid[] = SECRET_SSID;  // your network SSID (name)
+char pass[] = SECRET_PASS;  // your network password
+unsigned long myChannelNumber = SECRET_CH_ID;
+const char* myWriteAPIKey = SECRET_WRITE_APIKEY;
+int keyIndex = 0;           // your network key Index number (needed only for WEP)
+
+static const int DHT_SENSOR_PIN = 14;
 const int TRIG_PIN = 5;
-const int ECHO_PIN = 17;
-const int LED = 16;
+const int ECHO_PIN = 4;
+const int LED = 35;
 const int MOTOR_PIN = 27;
 const int ENABLE_PIN = 12;
 const int ENABLE_PIN2 = 32;
 const int MOTOR_PIN2 = 33;
 
+// Initialize our values
 const int FREQ = 30000;
 const int PWM_CHANNEL = 0;
 const int RESOLUTION = 8;
 int dutyCycle = 0;
+
+uint32_t tsLastReportThingSpeak = 0;  //4 byte unsigned int to to time ThingSpeak 20s
+uint32_t tsLastReport = 0;
+int number = 0;
+String myStatus = "";
+
+float temperature;
+float humidity;
+float beat;
+
 uint8_t success;
 long duration;
 float cms;
 
-DFRobot_DHT11 DHT;
+//for looping the main every 2 seconds
+unsigned long previousMillis = 0;  //execute the loop in void main only if the current time is - the last time readings were taken is greater than 2 seconds
+const long interval = 1000;        // Interval in milliseconds
+uint32_t timer = millis();
+
+DHT_Async dht_sensor(DHT_SENSOR_PIN, DHT_SENSOR_TYPE);
 Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
+PulseOximeter pox;
 
+WiFiClient client;
 WebServer server(80);
-
+int getTemp() {  
+  // int temperature = DHT.temperature;
+  return temperature;
+}
+String getHumidity() {
+  //String humidity = String(DHT.humidity);
+  return String(humidity);
+}
+String getHeart(){
+  return String(beat);
+}
+// Callback fired when a pulse is detected
+void onBeatDetected() {
+  Serial.println("\nBeat!");
+  Serial.print(beat);
+  Serial.print("bpm / SpO2:");
+  Serial.print(pox.getSpO2());
+  Serial.println("%");
+}
 bool checkAllowedUID(uint8_t uid[], uint8_t uidLength) {
   // Define the allowed UID
   uint8_t allowedUID[] = { 0x75, 0xFE, 0xF8, 0x3A };  // The nfc value is 75,FE,F8,3A
@@ -77,11 +125,6 @@ String handleRFID() {
   }
 }
 
-String getTemp() {
-  DHT.read(DHT11_PIN);
-  String temp = String(DHT.temperature);
-  return temp;
-}
 String getFSR() {
   const int fsr = 34;
   int fsrRead;
@@ -177,7 +220,8 @@ void setup(void) {
   Serial.begin(115200);
   
   WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
+  ThingSpeak.begin(client);  // Initialize ThingSpeak
+  WiFi.begin(ssid, pass);
   Serial.println("");
   nfc.begin();
   // Wait for connection
@@ -209,7 +253,7 @@ void setup(void) {
   });
 
   server.on("/data.html", []() {
-    String message = datapage + getTemp() + datapage1 + getFSR() + datapage3;
+    String message = datapage + String(getTemp()) + datapage1 + String(getHeart()) + datapage2 + getHumidity() + datapage3 + getFSR() + datapage4;
     server.send(200, "text/html", message);
   });
 
@@ -222,6 +266,7 @@ void setup(void) {
 
   server.begin();
   Serial.println("HTTP server started");
+  Serial.println("Initializing pulse oximeter..");
 
   pinMode(MOTOR_PIN, OUTPUT);
   pinMode(MOTOR_PIN2, OUTPUT);
@@ -229,9 +274,80 @@ void setup(void) {
   ledcAttachPin(ENABLE_PIN, PWM_CHANNEL);
   ledcAttachPin(ENABLE_PIN2, PWM_CHANNEL);
   ledcWrite(PWM_CHANNEL, dutyCycle);
+
+  if (!pox.begin()) {
+    Serial.println("FAILED");
+    for (;;)
+      ;
+  } else {
+    Serial.println("SUCCESS");
+  }
+  pox.setOnBeatDetectedCallback(onBeatDetected);
+}
+
+static bool measure_environment(float* temperature, float* humidity) {
+  static unsigned long measurement_timestamp = millis();
+ 
+  /* Measure once every two seconds. */
+  if (millis() - measurement_timestamp > 2000ul) {
+    if (dht_sensor.measure(temperature, humidity)) {
+      measurement_timestamp = millis();
+      return (true);
+    }
+  }
+ 
+  return (false);
 }
 
 void loop(void) {
   server.handleClient();
-  delay(2);  //allow the cpu to switch to other tasks
+  pox.update();
+
+  unsigned long currentMillis = millis();
+  if (millis() - tsLastReport > REPORTING_PERIOD_MS) {
+      //  Serial.print("Heart rate:");
+      beat = pox.getHeartRate();
+      //  Serial.print(beat);
+      //  Serial.print("bpm / SpO2:");
+      //  Serial.print(pox.getSpO2());
+      //  Serial.println("%");
+
+      tsLastReport = millis();
+    }
+
+    /* Measure temperature and humidity.  If the functions returns
+        true, then a measurement is available. */
+    if (measure_environment(&temperature, &humidity)) {
+    Serial.print("\nTemp:");
+    Serial.print(temperature, 1);
+    Serial.print("  Humi:");
+    Serial.print(humidity, 1);
+    Serial.println("%");
+  }
+ 
+  // Write to ThingSpeak. There are up to 8 fields in a channel
+  ThingSpeak.setField(1, temperature);
+  ThingSpeak.setField(2, beat);
+  updateTS();
+}
+
+void updateTS() {
+  if (millis() - tsLastReport > REPORTING_PERIOD_MS) {
+ 
+    // pieces of information in a channel.  Here, we write to field all the fields.
+    int x = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey); 
+    if (!pox.begin()) {
+      Serial.println("FAILED");
+      for (;;)
+        ;
+    } else {
+      Serial.println("SUCCESS");
+    }
+ 
+    pox.setOnBeatDetectedCallback(onBeatDetected);
+    pox.update();
+ 
+    tsLastReport = millis();
+ 
+  }
 }

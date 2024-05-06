@@ -24,9 +24,10 @@ String controlspage = F(R"=====(
       width: 100%;
       background-color: rgba(255, 255, 255, 0.1); 
       overflow: auto;
+      text-align: center;
     }
     .navbar a {
-      float: left;
+      display: inline-block; /* elements are displayed in a line */
       padding: 12px;
       color: white;
       text-decoration: none;
@@ -71,7 +72,8 @@ String controlspage = F(R"=====(
       display: flex;
       flex-direction: column;
       align-items: center;
-    }
+      text-align:center;
+   }
 
     .flex-keypad {
         display: flex;
@@ -82,61 +84,61 @@ String controlspage = F(R"=====(
 
     .myButton {
       display: block;
-      width: 20%;
-      padding: 10px;
-      margin: 10px;
-      font-size: 16px;
       background-color: #4CAF50;
       color: white;
+      font-size: 20px;
+      padding: 15px 0;
+      width: 100px;
       border: none;
-      border-radius: 4px;
+      border-radius: 8px;
       cursor: pointer;
+      margin: 8px;
     }
     .emergencyButton {
-      display: block;
-      background-color: #4CAF50;
+      background-color: #e74c3c; /* Red */
       color: white;
       font-size: 20px;
       padding: 15px 25px;
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      margin: 8px;
+      margin-top: 20px; 
     }
-    @media (max-width: 576px) {
-
+    .emergencyButton:hover {
+      background-color: #c0392b; /* Darker red */
     }
 </style>
 </head>
 
 <body>
-    <div class="overlay"></div>
-    <div class="navbar">
-        <a href="homepage2.html">Home</a>
-        <a href="info.html">Project Information</a>
-        <a href="data.html">Data</a>
+  <div class="navbar">
+      <a href="homepage2.html">Home</a>
+      <a href="info.html">Project Information</a>
+      <a href="data.html">Data</a>
   </div>
-    <div class="content">
-    <header>
-        <h1>Wheelchair Control</h1>
-    </header>
-    <p><a href="homepage2.html">Go back</a></p>
-    <!-- Your content for the controls page goes here -->
-    <section class="control-section">
+  <div class="content">
+  <header>
+      <h1>Wheelchair Control</h1>
+  </header>
+  <p><a href="homepage2.html">Go back</a></p>
+  <!-- Your content for the controls page goes here -->
+  <section class="control-section">
+      <div class = "flex-keypad">
+        <button class="myButton" onclick="fetch('/sentKeyPressToWebServer?button=F')"> Fwd</button> 
+      </div>
         <div class = "flex-keypad">
-          <button class="emergencyButton" onclick="fetch('/sentKeyPressToWebServer?button=F')"> Fwd</button> 
+          <button class="myButton" onclick="fetch('/sentKeyPressToWebServer?button=L')"> Left</button> 
+          <button class="myButton" onclick="fetch('/sentKeyPressToWebServer?button=S')"> Stop</button> 
+          <button class="myButton" onclick="fetch('/sentKeyPressToWebServer?button=R')"> Right</button> 
         </div>
-          <div class = "flex-keypad">
-            <button class="emergencyButton" onclick="fetch('/sentKeyPressToWebServer?button=L')"> Left</button> 
-            <button class="emergencyButton" onclick="fetch('/sentKeyPressToWebServer?button=S')"> Stop</button> 
-            <button class="emergencyButton" onclick="fetch('/sentKeyPressToWebServer?button=R')"> Right</button> 
-          </div>
-          <div class = "flex-keypad">
-            <button class="emergencyButton" onclick="fetch('/sentKeyPressToWebServer?button=B')"> Back</button> 
-          </div>
+        <div class = "flex-keypad">
+          <button class="myButton" onclick="fetch('/sentKeyPressToWebServer?button=B')"> Back</button> 
         </div>
-    </section>
-</div>
+      </div>
+  </section>
+  </div>
+  <button onclick="location.href='Emergency.html'" class="emergencyButton">Emergency</button>
+
 </body>
 </html>
 )=====");

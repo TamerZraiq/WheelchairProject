@@ -1,4 +1,4 @@
-String homePagePart2 = F(R"=====(
+String emergency = F(R"=====(
 <!DOCTYPE html>
 <html lang="en">
 <head>    
@@ -84,7 +84,7 @@ String homePagePart2 = F(R"=====(
         font-size: 1.0em;
       }
     }
-    .emergencyButton {
+    .emergency-button {
       background-color: #e74c3c; /* Red */
       color: white;
       font-size: 20px;
@@ -94,7 +94,7 @@ String homePagePart2 = F(R"=====(
       cursor: pointer;
       margin-top: 20px; 
     }
-    .emergencyButton:hover {
+    .emergency-button:hover {
       background-color: #c0392b; /* Darker red */
     }
   </style>
@@ -103,22 +103,18 @@ String homePagePart2 = F(R"=====(
 <body>
   <div class="navbar">
         <a href="homepage2.html">Home</a>
-        <a href="info.html">Project Info</a>
+        <a href="controls.html">Control</a>
+        <a href="data.html">Data</a>
   </div>
   <div class="content">
     <header>
-      <h1>Smart IoT Wheelchair</h1>
+      <h1>EMERGENCY PAGE</h1>
     </header>
-    <header>
-      <h2>Please choose one of the following</h2>
-    </header>        
-    <section class="options-section">
-      <h2><a href="data.html">Data and Details</a></h2>
+    <p><a href="homepage2.html">Go back</a></p>
+    <section>
+      )=====");
+      String gpsData = F(R"=====(
     </section>
-    <section class="options-section">
-      <h2><a href="controls.html">Wheelchair Control</a></h2>
-    </section>
-    <button onclick="location.href='Emergency.html'" class="emergencyButton">Emergency</button>
   </div>
 </body>
 </html>

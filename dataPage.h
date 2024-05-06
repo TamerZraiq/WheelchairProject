@@ -25,9 +25,10 @@ String datapage = F(R"=====(
       width: 100%;
       background-color: rgba(255, 255, 255, 0.1); 
       overflow: auto;
+      text-align: center; /* Center align the navigation items */
     }
     .navbar a {
-      float: left;
+      display: inline-block; /* elements are displayed in a line */
       padding: 12px;
       color: white;
       text-decoration: none;
@@ -98,8 +99,10 @@ String datapage = F(R"=====(
   <div class="overlay"></div>
   <div class="navbar">
         <a href="homepage2.html">Home</a>
-        <a href="info.html">Project Information</a>
+        <a href="info.html">Information</a>
         <a href="controls.html">Control</a>
+        <a href="Emergency.html">Emergency</a>
+
   </div>
   <div class="content">
     <header>

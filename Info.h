@@ -22,9 +22,10 @@ String information = F(R"=====(
           width: 100%;
           background-color: rgba(255, 255, 255, 0.1); 
           overflow: auto;
+          text-align: center;
         }
         .navbar a {
-          float: left;
+          display: inline-block; /* elements are displayed in a line */
           padding: 12px;
           color: white;
           text-decoration: none;
@@ -56,7 +57,7 @@ String information = F(R"=====(
         <a href="homepage2.html">Home</a>
         <a href="data.html">Data</a>
         <a href="controls.html">Control</a>
-        <a href="emergency.html">Emergency</a>
+        <a href="Emergency.html">Emergency</a>
     </div>
     <div class="content">
         <header>
@@ -67,12 +68,13 @@ String information = F(R"=====(
             <p>This page provides details and insights into the operation and features of the Smart IoT Wheelchair. Designed to enhance mobility and ensure safety, the Smart IoT Wheelchair is equipped with various features.</p>
             <p>Features include:</p>
             <ul>
-                <li>Real-time data monitoring</li>
-                <li>Remote control capabilities</li>
-                <li>Emergency stop function</li>
-                <li>Customizable seating and control settings</li>
+                <li>Real-time data monitoring such as heart rate, temperature, humidity, seat occupancy</li>
+                <li>Remote control capabilities using virtual controls to control 2 DC motors</li>
+                <li>Obstacle detection using ultrasonic sensor and alerts user using LED and buzzer</li>
+                <li>Emergency stop function</li>               
+                <li>Location tracking capabilities using GPS</li>
             </ul>
-            <p>The aim is to deliver an unmatched level of convenience and reliability for the users! Thank you for choosing the Smart IoT Wheelchair.</p>
+            <p>The aim is to deliver an convenience and reliability for the users! Thank you for choosing the Smart IoT Wheelchair.</p>
         </div>
     </div>
 </body>

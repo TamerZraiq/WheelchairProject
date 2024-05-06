@@ -6,23 +6,27 @@
 #include <Wire.h>
 #include <SPI.h>
 #include <Adafruit_PN532.h>
+#include <Adafruit_GPS.h>
 #include "MAX30100_PulseOximeter.h"
 #include "DHT_Async.h"
 
 #include "homepage2.h"
+#include "Emergency.h"
 #include "AccessGranted.h"
 #include "AccessDenied.h"
 #include "dataPage.h"
 #include "controlsPage.h"
 #include "Info.h"
 #include "secrets.h"
-#include "ThingSpeak.h" 
+#include "ThingSpeak.h"
 
 #define PN532_IRQ (18)
 #define PN532_RESET (19) 
 #define REPORTING_PERIOD_MS_THINGSPEAK 1000  // report to ThingSpeak every 1s
 #define REPORTING_PERIOD_MS 1000
 #define DHT_SENSOR_TYPE DHT_TYPE_11
+#define GPSSerial Serial2
+#define GPSECHO false
 
 char ssid[] = SECRET_SSID;  // your network SSID (name)
 char pass[] = SECRET_PASS;  // your network password
@@ -32,14 +36,15 @@ int keyIndex = 0;           // your network key Index number (needed only for WE
 
 static const int DHT_SENSOR_PIN = 14;
 const int TRIG_PIN = 5;
-const int ECHO_PIN = 4;
-const int LED = 35;
+const int ECHO_PIN = 23;
+const int LED = 13;
+const int buzzer = 25;
 const int MOTOR_PIN = 27;
 const int ENABLE_PIN = 12;
 const int ENABLE_PIN2 = 32;
 const int MOTOR_PIN2 = 33;
 
-// Initialize our values
+// Initialize motor values
 const int FREQ = 30000;
 const int PWM_CHANNEL = 0;
 const int RESOLUTION = 8;
@@ -49,7 +54,6 @@ uint32_t tsLastReportThingSpeak = 0;  //4 byte unsigned int to to time ThingSpea
 uint32_t tsLastReport = 0;
 int number = 0;
 String myStatus = "";
-
 float temperature;
 float humidity;
 float beat;
@@ -66,11 +70,12 @@ uint32_t timer = millis();
 DHT_Async dht_sensor(DHT_SENSOR_PIN, DHT_SENSOR_TYPE);
 Adafruit_PN532 nfc(PN532_IRQ, PN532_RESET);
 PulseOximeter pox;
+Adafruit_GPS GPS(&GPSSerial);
 
 WiFiClient client;
 WebServer server(80);
 int getTemp() {  
-  // int temperature = DHT.temperature;
+  //int temperature = DHT.temperature;
   return temperature;
 }
 String getHumidity() {
@@ -120,8 +125,9 @@ String handleRFID() {
       return denied;
     }
   }else{
-    return undetected;
     Serial.println(undetected);
+    return undetected;
+    
   }
 }
 
@@ -140,7 +146,7 @@ String getFSR() {
     return unoccupied;
   }
 }
-float reverseSensor(){
+void reverseSensor(){
   digitalWrite(TRIG_PIN, LOW);
   delayMicroseconds(5);
   digitalWrite(TRIG_PIN, HIGH);
@@ -152,13 +158,49 @@ float reverseSensor(){
 
   Serial.print(cms);
   Serial.println(" cm");
-  
+
   if (cms < 5) {
     digitalWrite(LED, HIGH);
-    delay(500);
+    digitalWrite(buzzer, HIGH);
+    delay(250);
     digitalWrite(LED, LOW);
-    delay(500);
+    digitalWrite(buzzer, LOW);
+    delay(250);
   }
+  delay(250);
+}
+ 
+//String to get the Google maps location to a 5 metre tolerance,
+//on the webpage we are able to click a link that takes us to the location on googlemaps
+String getGoogle() {
+  float lati_v1;   // divide 100
+  int lati_int;    //takes out the integer
+  float lati_dec;  //takes out the decimal
+  double lati_v2;  //final latitude
+ 
+  lati_v1 = GPS.latitude / 100;
+  lati_int = lati_v1;
+  lati_dec = lati_v1 - lati_int;
+  lati_dec = lati_dec / 0.6;
+  lati_v2 = lati_int + lati_dec;
+ 
+  float longi_v1;   // divide 100
+  int longi_int;    //takes out the integer
+  float longi_dec;  //takes out the decimal
+  double longi_v2;  //final longitude
+ 
+  longi_v1 = GPS.longitude / 100;
+  longi_int = longi_v1;
+  longi_dec = longi_v1 - longi_int;
+  longi_dec = longi_dec / 0.6;
+  longi_v2 = longi_int + longi_dec;
+ 
+  //we are concatenating the latitude and longitude to the https, so that we can access the link on google
+  String googleMapsLink = "https://www.google.com/maps?q=";
+  googleMapsLink += String(lati_v2, 6);
+  googleMapsLink += ",";
+  googleMapsLink += String(-longi_v2, 6);
+  return googleMapsLink;
 }
 void handleRoot() {
   String message;
@@ -207,7 +249,6 @@ void handleKeyPress() {
     digitalWrite(MOTOR_PIN, HIGH);
     digitalWrite(MOTOR_PIN2, LOW);
     ledcWrite(PWM_CHANNEL, dutyCycle);
-    reverseSensor();
   } else if (receivedData == "S") {
     ledcWrite(PWM_CHANNEL, 0);
   }
@@ -261,7 +302,10 @@ void setup(void) {
     String message = controlspage;
     server.send(200, "text/html", message);
   });
-
+  server.on("/Emergency.html", []() {
+    String message = emergency + getGoogle() + gpsData;
+    server.send(200, "text/html", message);
+  });
   server.onNotFound(handleNotFound);
 
   server.begin();
@@ -274,6 +318,10 @@ void setup(void) {
   ledcAttachPin(ENABLE_PIN, PWM_CHANNEL);
   ledcAttachPin(ENABLE_PIN2, PWM_CHANNEL);
   ledcWrite(PWM_CHANNEL, dutyCycle);
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+  pinMode(LED, OUTPUT);
+  pinMode(buzzer, OUTPUT);
 
   if (!pox.begin()) {
     Serial.println("FAILED");
@@ -283,6 +331,17 @@ void setup(void) {
     Serial.println("SUCCESS");
   }
   pox.setOnBeatDetectedCallback(onBeatDetected);
+
+  Serial.println("Adafruit GPS library basic parsing test!");
+  GPS.begin(9600);
+  // uncomment this line to turn on RMC (recommended minimum) and GGA (fix data) including altitude
+  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
+  // uncomment this line to turn on only the "minimum recommended" data
+  //GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);  // 1 Hz update rate
+  GPS.sendCommand(PGCMD_ANTENNA);
+  delay(1000);
+  GPSSerial.println(PMTK_Q_RELEASE);
 }
 
 static bool measure_environment(float* temperature, float* humidity) {
@@ -313,19 +372,77 @@ void loop(void) {
       //  Serial.println("%");
 
       tsLastReport = millis();
+  }
+  if (millis() - timer > 1000) {
+    reverseSensor(); 
+  }
+  char c = GPS.read();
+  // if you want to debug, this is a good time to do it!
+  if (GPSECHO)
+    if (c) Serial.print(c);
+  // if a sentence is received, we can check the checksum, parse it...
+  if (GPS.newNMEAreceived()) {
+    // a tricky thing here is if we print the NMEA sentence, or data
+    // we end up not listening and catching other sentences!
+    // so be very wary if using OUTPUT_ALLDATA and trying to print out data
+    // Serial.print(GPS.lastNMEA()); // this also sets the newNMEAreceived() flag to false
+    if (!GPS.parse(GPS.lastNMEA()))  // this also sets the newNMEAreceived() flag to false
+      return;                        // we can fail to parse a sentence in which case we should just wait for another
+  }
+  if (millis() - timer > 2000) {
+    timer = millis();  // reset the timer
+    Serial.print("\nTime: ");
+    if (GPS.hour < 10) { Serial.print('0'); }
+    Serial.print(GPS.hour, DEC);
+    Serial.print(':');
+    if (GPS.minute < 10) { Serial.print('0'); }
+    Serial.print(GPS.minute, DEC);
+    Serial.print(':');
+    if (GPS.seconds < 10) { Serial.print('0'); }
+    Serial.print(GPS.seconds, DEC);
+    Serial.print('.');
+    if (GPS.milliseconds < 10) {
+      Serial.print("00");
+    } else if (GPS.milliseconds > 9 && GPS.milliseconds < 100) {
+      Serial.print("0");
     }
-
+    Serial.println(GPS.milliseconds);
+    Serial.print("Date: ");
+    Serial.print(GPS.day, DEC);
+    Serial.print('/');
+    Serial.print(GPS.month, DEC);
+    Serial.print("/20");
+    Serial.println(GPS.year, DEC);
+    Serial.print("Fix: ");
+    Serial.print((int)GPS.fix);
+    Serial.print(" quality: ");
+    Serial.println((int)GPS.fixquality);
+    if (GPS.fix) {
+      Serial.print("Location: ");
+      Serial.print(GPS.latitude / 100, 2);
+      Serial.print(GPS.lat);
+      Serial.print(", ");
+      Serial.print(-GPS.longitude / 100, 2);
+      Serial.println(GPS.lon);
+      //Serial.print("Speed (knots): "); Serial.println(GPS.speed);
+      //Serial.print("Angle: "); Serial.println(GPS.angle);
+      // Serial.print("Altitude: "); Serial.println(GPS.altitude);
+      Serial.print("Satellites: ");
+      Serial.println((int)GPS.satellites);
+    }
+  }
     /* Measure temperature and humidity.  If the functions returns
-        true, then a measurement is available. */
-    if (measure_environment(&temperature, &humidity)) {
+        true, then a measurement is available.
+        the parameters of measure_environment are pointers of the variables where the readings are stored */
+  if (measure_environment(&temperature, &humidity)) {
     Serial.print("\nTemp:");
     Serial.print(temperature, 1);
     Serial.print("  Humi:");
     Serial.print(humidity, 1);
     Serial.println("%");
   }
- 
-  // Write to ThingSpeak. There are up to 8 fields in a channel
+  /* To set the field values with the collected data, the setField () is used to assign 
+  the temperature and humidity  values to specific fields in the ThingSpeak channel*/
   ThingSpeak.setField(1, temperature);
   ThingSpeak.setField(2, beat);
   updateTS();
@@ -335,11 +452,11 @@ void updateTS() {
   if (millis() - tsLastReport > REPORTING_PERIOD_MS) {
  
     // pieces of information in a channel.  Here, we write to field all the fields.
+    //To send the data to ThingSpeak, the function writeFields () is used
     int x = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey); 
     if (!pox.begin()) {
       Serial.println("FAILED");
-      for (;;)
-        ;
+      for (;;);
     } else {
       Serial.println("SUCCESS");
     }
